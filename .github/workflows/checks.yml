@@ -1,0 +1,34 @@
+name: DSP checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dsp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DISPATCH_PLATFORM_PACKAGES_URL: ${{ vars.DISPATCH_PLATFORM_PACKAGES_URL }}
+      DISPATCH_PLATFORM_PACKAGES_SHA256: ${{ vars.DISPATCH_PLATFORM_PACKAGES_SHA256 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tooling/frontend/package-lock.json
+      - run: python3 tooling/fetch-platform.py "$RUNNER_TEMP/platform-packages"
+      - run: npm run bootstrap -- "$RUNNER_TEMP/platform-packages"
+      - run: npm run check
+      - run: npm test
+      - run: npm run build -- "$RUNNER_TEMP/dsp-candidate"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dsp-development-candidate
+          path: ${{ runner.temp }}/dsp-candidate
+          retention-days: 7

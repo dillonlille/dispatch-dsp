@@ -1,0 +1,5 @@
+{
+  "url": null,
+  "sha256": null,
+  "description": "Configure the immutable Core platform-package release asset and digest after repository creation. Local bootstrap accepts a verified bundle directory."
+}
