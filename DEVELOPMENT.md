@@ -33,10 +33,28 @@ tests require an explicit Core source export installed as a test-only package;
 Core's `tooling/integration-package.js` installs that fixture and its platform
 dependencies into this project's `node_modules`. Then run `npm run test:integration`.
 
-Public CI requires the platform bundle URL and SHA-256 to be configured after
-Core's first package release. Until then, the same checks run locally with the
-bundle path above. Hosted checks never have production deployment credentials.
+Public CI uses the reviewed dependency lock in `tooling/platform-dependencies.json`.
+Before the first Core release, a separate job builds a bundle from an exact Core
+commit. Production publication requires a published bundle URL and SHA-256.
+Hosted checks never have production deployment credentials.
 
 Each DSP keeps its own installed plugin code, SDK copies, settings, databases,
 credentials and browser sessions. Downloading a release does not change them.
 See `RELEASES.md` for independent releases and controlled activation.
+
+## GitHub workflow
+
+Use an isolated feature worktree from freshly fetched `origin/main`. Open a draft
+PR after the first reviewed commit. Run the applicable local checks and wait for
+GitHub checks on the exact PR commit before marking it ready. Report the PR link,
+changes and verification in chat. Only merge after the owner explicitly approves;
+recheck the approved head and required checks immediately before merging. Automatic
+merge is disabled. Main requires PRs, up-to-date checks and resolved conversations.
+The owner's chat approval is the human gate; GitHub does not interpret chat.
+
+`tooling/workflow.py pr-details --repo OWNER/REPOSITORY --pr NUMBER` reports PR
+facts. This helper is read-only; use normal git/gh commands for branches and PRs.
+Keep multiline PR bodies in a file and pass `--body-file`.
+
+The manual release workflow is a separate operation; never dispatch it as part of
+ordinary development, merging, testing or retrying CI. See `RELEASES.md`.
