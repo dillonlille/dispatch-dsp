@@ -56,5 +56,6 @@
     "runtime/gateway/tests/managed-runtime.test.js",
     "runtime/supervisor/tests/runtime-container.test.js",
     "plugins/paycom/backend/tests/settings.test.js"
-  ]
+  ],
+  "concurrency": 1
 }

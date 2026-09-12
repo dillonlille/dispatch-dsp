@@ -1,5 +1,9 @@
 {
   "url": null,
   "sha256": null,
-  "description": "Configure the immutable Core platform-package release asset and digest after repository creation. Local bootstrap accepts a verified bundle directory."
+  "description": "Development CI builds an isolated bundle from the exact Core commit. Before production publication, pin the Core release asset URL and SHA-256 through a reviewed PR.",
+  "developmentSource": {
+    "repository": "dispatch-core",
+    "commit": "90e29d2940eac250b15042e336661562cff72fe1"
+  }
 }

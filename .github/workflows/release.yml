@@ -1,24 +1,47 @@
-name: DSP checks
+name: Publish dsp release
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      version:
+        description: Version explicitly selected by the owner (X.Y.Z)
+        required: true
+        type: string
+      expected_main:
+        description: Verified latest main commit (40 characters)
+        required: true
+        type: string
+      changelog:
+        description: Reviewed release notes
+        required: true
+        type: string
 concurrency:
-  group: dsp-checks-${{ github.ref }}
-  cancel-in-progress: true
+  group: dsp-release-publication
+  cancel-in-progress: false
 permissions:
   contents: read
 jobs:
   platform:
+    if: github.ref == 'refs/heads/main' && inputs.expected_main == github.sha
     uses: ./.github/workflows/platform-bundle.yml
-  dsp:
+    with:
+      production: true
+  publish:
+    if: github.ref == 'refs/heads/main' && inputs.expected_main == github.sha
     needs: platform
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_COMMIT: ${{ inputs.expected_main }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.expected_main }}
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -30,7 +53,7 @@ jobs:
         with:
           name: platform-bundle
           path: ${{ runner.temp }}/dependency
-      - name: Verify and install platform packages
+      - name: Verify platform bundle
         env:
           BUNDLE_SHA256: ${{ needs.platform.outputs.sha256 }}
         run: |
@@ -38,13 +61,14 @@ jobs:
           printf '%s  platform-bundle.tar.gz\n' "$BUNDLE_SHA256" | sha256sum --check --strict
           mkdir "$RUNNER_TEMP/platform-packages"
           tar -xzf platform-bundle.tar.gz -C "$RUNNER_TEMP/platform-packages"
-      - name: Validate GitHub workflows
-        run: |
-          curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz --output "$RUNNER_TEMP/actionlint.tar.gz"
-          printf '%s  %s\n' '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' "$RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check --strict
-          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
-          "$RUNNER_TEMP/actionlint"
       - run: npm run bootstrap -- "$RUNNER_TEMP/platform-packages"
+      - name: Set release package paths
+        run: |
+          echo "RELEASE_NOTES_FILE=$RUNNER_TEMP/release-notes.md" >> "$GITHUB_ENV"
+      - name: Verify selected main and unused version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tooling/release.js guard
       - name: Verify trusted test executables
         run: |
           node - <<'JS'
@@ -60,10 +84,17 @@ jobs:
       - run: npm run check
       - run: node tooling/ci-browser-smoke.js
       - run: npm test
-      - run: npm run build -- "$RUNNER_TEMP/dsp-candidate"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - run: npm run build -- "$RUNNER_TEMP/candidate"
+      - name: Package the reviewed release
+        env:
+          RELEASE_NOTES: ${{ inputs.changelog }}
+        run: |
+          printf '%s\n' "$RELEASE_NOTES" > "$RELEASE_NOTES_FILE"
+          node tooling/release.js package "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/publication"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          name: dsp-development-candidate
-          path: ${{ runner.temp }}/dsp-candidate
-          retention-days: 7
-          if-no-files-found: error
+          subject-path: ${{ runner.temp }}/publication/*
+      - name: Publish verified assets to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tooling/release.js publish "$RUNNER_TEMP/publication"
