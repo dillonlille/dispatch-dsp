@@ -40,9 +40,14 @@ test('CAPTCHA continuation stays on the original document and only submits uncha
     });
     await connection.command('Page.enable'); await connection.command('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
     const load = async () => {
-      await connection.command('Page.navigate', { url });
+      const navigation = await connection.command('Page.navigate', { url });
       for (let i = 0; i < 100; i++) {
-        try { if ((await connection.evaluate(SNAPSHOT)).captchaPresent) return; } catch {}
+        try {
+          const { frameTree } = await connection.command('Page.getFrameTree');
+          if (frameTree.frame.loaderId === navigation.loaderId
+              && await connection.evaluate('document.readyState') === 'complete'
+              && (await connection.evaluate(SNAPSHOT)).captchaPresent) return;
+        } catch {}
         await new Promise(resolve => setTimeout(resolve, 30));
       }
       assert.fail('fixture page did not load');

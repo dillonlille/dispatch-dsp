@@ -1,7 +1,17 @@
 # DSP development
 
-Requires Node 22 or 24 and npm. Obtain the verified platform package bundle from
-Core's build/release artifacts, then run from this repository:
+Requires Node 22 or 24 and npm. The full test suite also runs real Chrome against
+local intercepted fixtures: install root-owned Chrome, `setpriv`, Xvfb, Python 3,
+libX11 and libXtst. Set `DISPATCH_CHROME_EXECUTABLE` if Chrome is outside the trusted
+command path. No real provider credentials are needed. Create worktrees with
+`umask 022`; source and executable parents must not be writable by other users.
+Hosted CI prepares trusted tool paths on a disposable runner and runs a blank
+native-window smoke check before the full suite. DSP test files run sequentially
+(`tooling/tests.json` sets `concurrency: 1`) so independent real-browser fixtures
+do not compete for cold-start resources on small runners.
+
+Obtain the verified platform package bundle from Core's build/release artifacts,
+then run from this repository:
 
 ```sh
 npm run bootstrap -- /absolute/build/platform-packages
