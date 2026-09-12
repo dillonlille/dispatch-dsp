@@ -11,7 +11,9 @@ async function main() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dispatch-ci-browser-'));
   fs.chmodSync(root, 0o700);
   let diagnostics = '', browser;
-  const runtime = new ChromeBrowserRuntime({ stateRoot: path.join(root, 'profiles'), directoryNetwork: false,
+  // This checks tool availability on a cold hosted runner, not startup latency.
+  // Production and the real browser tests retain their normal startup limits.
+  const runtime = new ChromeBrowserRuntime({ stateRoot: path.join(root, 'profiles'), directoryNetwork: false, startTimeoutMs: 60000,
     spawnImpl(command, args, options) {
       const stdio = [...options.stdio];stdio[2] = 'pipe';
       const child = spawn(command, args, { ...options, stdio });

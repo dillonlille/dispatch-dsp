@@ -7,6 +7,7 @@ const path = require('node:path');
 const { ChromeBrowserRuntime } = require('../src/browser-runtime');
 const { CdpConnection, createTarget } = require('../src/cdp');
 const { paycomAdapter, SECURITY_QUESTION_PATH, CLIENT_LANDING_PATH, SNAPSHOT } = require('../../../plugins/paycom/backend/auth/adapter');
+const { navigateFixture, settleFixture, reportNativeFixture } = require('./helpers/native-fixture');
 
 test('CAPTCHA continuation stays on the original document and only submits unchanged retained PINs once', { timeout: 60000 }, async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'paycom-assistance-')); fs.chmodSync(root, 0o700);
@@ -39,19 +40,7 @@ test('CAPTCHA continuation stays on the original document and only submits uncha
         .catch(error => { if (!request.url.includes('example.com')) interceptionError = error; });
     });
     await connection.command('Page.enable'); await connection.command('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
-    const load = async () => {
-      const navigation = await connection.command('Page.navigate', { url });
-      for (let i = 0; i < 100; i++) {
-        try {
-          const { frameTree } = await connection.command('Page.getFrameTree');
-          if (frameTree.frame.loaderId === navigation.loaderId
-              && await connection.evaluate('document.readyState') === 'complete'
-              && (await connection.evaluate(SNAPSHOT)).captchaPresent) return;
-        } catch {}
-        await new Promise(resolve => setTimeout(resolve, 30));
-      }
-      assert.fail('fixture page did not load');
-    };
+    const load = () => navigateFixture(connection, url, `(${SNAPSHOT}).captchaPresent`);
     for (const scenario of ['empty_before', 'still_visible', 'reloaded', 'cleared', 'changed', 'completed']) {
       await load();
       if (scenario === 'empty_before') await connection.evaluate('document.querySelector("#pin2").value=""; document.querySelector("#pin5").value=""');
@@ -63,6 +52,7 @@ test('CAPTCHA continuation stays on the original document and only submits uncha
       if (scenario !== 'still_visible') await connection.evaluate('document.querySelector("iframe").remove()');
       if (scenario === 'cleared') await connection.evaluate('document.querySelector("#pin2").value=""');
       if (scenario === 'changed') await connection.evaluate('document.querySelector("#pin2").value="different"');
+      await settleFixture(connection);
       let resumed = 0;
       const operation = paycomAdapter.completeBrowserAssistance(browser, context, { loginOnly: true,
         resumeAuthentication: async () => { resumed++; return { status: 'authenticated' }; } });
@@ -78,5 +68,8 @@ test('CAPTCHA continuation stays on the original document and only submits uncha
       if (scenario !== 'empty_before') assert.equal(resumed, 0);
       if (interceptionError) throw interceptionError;
     }
+  } catch (error) {
+    await reportNativeFixture(connection);
+    throw error;
   } finally { connection?.close(); await browser?.close(); fs.rmSync(root, { recursive: true, force: true }); }
 });

@@ -8,6 +8,7 @@ const test = require('node:test');
 const { ChromeBrowserRuntime, processGroupAlive } = require('../src/browser-runtime');
 const { CdpConnection, createTarget } = require('../src/cdp');
 const adapter = require('../../../plugins/paycom/backend/auth/adapter');
+const { navigateFixture, reportNativeFixture } = require('./helpers/native-fixture');
 
 test('normal Chrome types exact PINs into locally intercepted forms and preserves the profile', { timeout: 60000 }, async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dispatch-native-window-'));
@@ -54,7 +55,9 @@ test('normal Chrome types exact PINs into locally intercepted forms and preserve
       pair = indices;
       pending = new Promise((resolve, reject) => { resolvePost = resolve; rejectPost = reject; });
       pending.catch(() => {});
-      await connection.command('Page.navigate', { url });
+      await navigateFixture(connection, url,
+        `document.querySelector('input[name="firstIndex"]')?.value === ${JSON.stringify(String(pair[0]))}
+          && document.querySelector('input[name="secondIndex"]')?.value === ${JSON.stringify(String(pair[1]))}`);
       const current = await adapter.waitForState(connection, 5000, new Set(['security_questions_required']));
       await adapter.submitNativeChallenge(connection, credentials, current.snapshot.challenge, browser, AbortSignal.timeout(10000));
       const form = await pending;
@@ -81,6 +84,9 @@ test('normal Chrome types exact PINs into locally intercepted forms and preserve
     connection = await CdpConnection.connect(target2.webSocketDebuggerUrl);
     const cookies = (await connection.command('Network.getCookies', { urls: [url] })).cookies;
     assert.equal(cookies.some(cookie => cookie.name === 'fixture_cookie' && cookie.value === 'retained'), true);
+  } catch (error) {
+    await reportNativeFixture(connection);
+    throw error;
   } finally {
     connection?.close(); await browser?.close(); fs.rmSync(root, { recursive: true, force: true });
   }
