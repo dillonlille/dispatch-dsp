@@ -82,6 +82,7 @@ jobs:
           console.log('Trusted Node, Chrome and launcher are available');
           JS
       - run: npm run check
+      - run: node tooling/ci-browser-smoke.js
       - run: npm test
       - run: npm run build -- "$RUNNER_TEMP/candidate"
       - name: Package the reviewed release

@@ -58,6 +58,7 @@ jobs:
           console.log('Trusted Node, Chrome and launcher are available');
           JS
       - run: npm run check
+      - run: node tooling/ci-browser-smoke.js
       - run: npm test
       - run: npm run build -- "$RUNNER_TEMP/dsp-candidate"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
