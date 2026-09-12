@@ -4,6 +4,6 @@
   "description": "Development CI builds an isolated bundle from the exact Core commit. Before production publication, pin the Core release asset URL and SHA-256 through a reviewed PR.",
   "developmentSource": {
     "repository": "dispatch-core",
-    "commit": "cb9b59c1b4e3e9a7c401d0a29cfbeeea7d49b85c"
+    "commit": "071a028d423c8f766b66a8a29a278785982634a3"
   }
 }
