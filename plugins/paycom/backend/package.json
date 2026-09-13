@@ -1,6 +1,6 @@
 {
   "name": "dispatch-paycom-plugin",
-  "version": "0.18.7",
+  "version": "0.18.8",
   "private": true,
   "description": "Paycom full-workforce immediate sync with retained unknown lifecycle state, persisted detail proof, and privacy-safe aggregate deltas",
   "type": "commonjs",

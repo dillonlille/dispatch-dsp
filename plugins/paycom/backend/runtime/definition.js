@@ -11,10 +11,10 @@ const { validateSpec } = require('dispatch-runtime-kit/collection-manager/src/va
 const PAYCOM_SPEC_RELATIVE_PATH = 'plugins/paycom/backend/config/collection-manager.json';
 const PAYCOM_EXECUTABLE_RELATIVE_PATH = 'plugins/paycom/backend/bin/dispatch-paycom-collector';
 const MANAGED_PAYCOM_CATALOG = Object.freeze({
-  pluginVersion: '0.18.7',
-  specificationSha256: '8bda68e1e82e8f004cffaf65ecd3e4c0ba460d97339ab055202008cf91ffa481',
+  pluginVersion: '0.18.8',
+  specificationSha256: 'e80bb94afb06b90f80908341c9b11622f166fdeb05152fcf288fba719efbd73e',
   executableSha256: '1a7653b184ec9b986a1449f212657fb5ff254e6246625200b9715ac3b67b70ef',
-  sourceTreeSha256: '76996cf38725b7e77b7c770932338154579cf6e3880ae276296f2dcd9f7ce6b6',
+  sourceTreeSha256: '0616622c895f3eb6654cf69a1894a672e9797d880208a1ed1d8fc7bd2b8e6c57',
 });
 const PAYCOM_FIRST_PUBLICATION_TASKS = Object.freeze({
   'paycom-period-roster': Object.freeze({ taskId: 'roster', method: 'roster.period', publication: 'roster' }),

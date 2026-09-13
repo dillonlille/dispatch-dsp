@@ -1,5 +1,5 @@
 import { usePaycomSync } from "./usePaycomSync.ts";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDown,
@@ -824,7 +824,9 @@ function PaycomSyncStatus({
   );
 }
 
-export function PaycomWorkforce() {
+export function PaycomWorkforce({
+  setupNotice,
+}: { setupNotice?: ReactNode } = {}) {
   const { session } = useSession();
   const { timeZone: displayTimezone } = useTimezone();
   const membership = activeMembership(session);
@@ -861,12 +863,14 @@ export function PaycomWorkforce() {
           Paycom settings
         </Button>
       )}
-      <PaycomSyncStatus
-        key={scope}
-        scope={scope}
-        timezone={displayTimezone}
-        canSync={has(membership, "sync.run")}
-      />
+      {setupNotice || (
+        <PaycomSyncStatus
+          key={scope}
+          scope={scope}
+          timezone={displayTimezone}
+          canSync={has(membership, "sync.run")}
+        />
+      )}
       <Tabs
         defaultValue={
           preferences.opening_page === "employees" ? "employees" : "timecard"
