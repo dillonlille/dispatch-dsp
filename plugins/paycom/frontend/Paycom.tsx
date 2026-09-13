@@ -122,10 +122,70 @@ function PaycomContent() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const state = connection.data;
+  const needsSetup =
+    state?.status !== "succeeded" && !state?.workforceAvailable;
+  // Share the Settings connection cache and read the broker's current result.
+  // The onboarding job also prepares collections; it is not a login status.
+  const credentials = useQuery({
+    queryKey: ["connections", membership?.organizationId],
+    queryFn: ({ signal }) =>
+      request<{ items: { service: string; state: string }[] }>(
+        "/api/organization/connections",
+        { signal },
+      ),
+    enabled: owner && needsSetup,
+    refetchInterval: pending(state?.status) ? 2000 : 5000,
+  });
+  const verified = credentials.data?.items.some(
+    (item) => item.service === "paycom" && item.state === "connected",
+  );
+  async function retry() {
+    setBusy(true);
+    setError(null);
+    try {
+      await mutation("/api/organization/paycom-setup/retry", "POST", {});
+      await connection.refetch();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+    }
+  }
   const copy = state ? connectionCopy[state.status] : null;
   const StatusIcon = copy?.icon || CircleHelp;
   if (!owner || state?.status === "succeeded" || state?.workforceAvailable)
     return <PaycomWorkforce />;
+  if (verified && state)
+    return (
+      <PaycomWorkforce
+        setupNotice={
+          <>
+            <Notice>
+              <p>
+                {pending(state.status)
+                  ? "Paycom is connected. Preparing workforce sync. Timecards and employees will appear after the first collection."
+                  : "Paycom is connected, but workforce setup has not finished."}
+              </p>
+              {state.canRetry ? (
+                <Button disabled={busy} variant="outline" onClick={retry}>
+                  Retry workforce setup
+                </Button>
+              ) : !pending(state.status) ? (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    location.hash = "#/settings?tab=connections";
+                  }}
+                >
+                  Connection settings
+                </Button>
+              ) : null}
+            </Notice>
+            <ErrorNotice error={error || connection.error} />
+          </>
+        }
+      />
+    );
   return (
     <div className="paycom-page">
       <PageHeading
@@ -213,22 +273,7 @@ function PaycomContent() {
                         <Button
                           disabled={busy}
                           variant="outline"
-                          onClick={async () => {
-                            setBusy(true);
-                            setError(null);
-                            try {
-                              await mutation(
-                                "/api/organization/paycom-setup/retry",
-                                "POST",
-                                {},
-                              );
-                              await connection.refetch();
-                            } catch (err) {
-                              setError(err);
-                            } finally {
-                              setBusy(false);
-                            }
-                          }}
+                          onClick={retry}
                         >
                           <RotateCw
                             data-icon="inline-start"

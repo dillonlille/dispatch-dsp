@@ -6,7 +6,7 @@ const test = require('node:test');
 const { fixture, spec } = require('./helpers');
 const { CollectionStore } = require('dispatch-runtime-kit/collection-manager/src/store');
 const { installation, applyState } = require('dispatch-runtime-kit/collection-manager/src/plugin-state');
-function command(state, revision) { return { command: 'apply', pluginId: 'paycom', version: '0.18.7', state, revision }; }
+function command(state, revision) { return { command: 'apply', pluginId: 'paycom', version: '0.18.8', state, revision }; }
 function definition() {
   const value = spec(); value.collectors[0].id = 'paycom'; value.sources[0].collector = 'paycom';
   value.syncs[0].id = 'paycom-main-workforce'; value.syncs[0].desiredState = 'running';

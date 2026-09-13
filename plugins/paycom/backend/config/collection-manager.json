@@ -3,7 +3,7 @@
   "collectors": [
     {
       "id": "paycom",
-      "version": "0.18.7",
+      "version": "0.18.8",
       "description": "Paycom roster, resource-link, and timecard collector using broker-authenticated browser sessions",
       "command": "${DISPATCH_PROJECT_ROOT}/plugins/paycom/backend/bin/dispatch-paycom-collector",
       "sourceSchema": {

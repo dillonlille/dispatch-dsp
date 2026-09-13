@@ -76,7 +76,7 @@ test('outbound agent forwards plugin lifecycle and actions through the Unix gate
   const forward = (action, input) => dispatchRuntimeRequest(proxy, request('fixture_alpha', action, input), 'fixture_alpha', 'outbound_agent');
   const invoke = { pluginId: 'paycom', action: 'workforce.day', input: { query: { date: '2026-09-02' } } };
   assert.equal((await forward('plugins.invoke', invoke)).status, 'plugin_disabled');
-  const state = { command: 'apply', pluginId: 'paycom', version: '0.18.7', state: 'enabled', revision: 1 };
+  const state = { command: 'apply', pluginId: 'paycom', version: '0.18.8', state: 'enabled', revision: 1 };
   assert.equal((await forward('plugins.manage', state)).status, 'applied');
   assert.equal((await forward('plugins.invoke', invoke)).data.label, 'alpha');
   assert.equal((await forward('plugins.manage', { ...state, state: 'disabled', revision: 2 })).status, 'applied');
